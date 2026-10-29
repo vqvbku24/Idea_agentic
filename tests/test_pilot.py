@@ -5,9 +5,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[1] / "src"))
 
 from pilot.corpus import Document, build_index_views
-from pilot.evaluate import auc
+from pilot.evaluate import auc, bootstrap_ci, rank_without_source
 from pilot.queries import lexical_leak
 from pilot.retrievers import BM25, rrf
+from pilot.queries import Query
 from pilot.pdf_extract import clean_body
 from pilot.llm import FakeProvider, complete
 import tempfile
@@ -26,6 +27,20 @@ class PilotTests(unittest.TestCase):
         index = BM25({"a": "blue cat", "b": "red dog"})
         self.assertEqual(index.rank("blue")[0][0], "a")
         self.assertEqual(rrf([["b", "a"], ["a", "b"]])[0][0], "a")
+
+    def test_absent_control_removes_source(self):
+        index = BM25({"source": "blue cat", "other": "red dog"})
+        ranked = rank_without_source(index, Query("source", "H", "blue"))
+        self.assertNotIn("source", [doc_id for doc_id, _ in ranked])
+
+    def test_bootstrap_resamples_source_papers(self):
+        mean, low, high = bootstrap_ci([0.0, 1.0], resamples=100, seed=13)
+        self.assertEqual(mean, 0.5)
+        self.assertLessEqual(low, mean)
+        self.assertGreaterEqual(high, mean)
+
+    def test_rrf_toy_example(self):
+        self.assertEqual(rrf([["a", "b"], ["a", "b"]], k=60)[0][0], "a")
 
     def test_metrics_helpers(self):
         self.assertGreater(lexical_leak("a method for speech", "Speech recognition method"), 0)
