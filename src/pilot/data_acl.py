@@ -187,6 +187,14 @@ def list_french_distractors(
     source_ids: set[str] | None = None,
 ) -> list[PaperMeta]:
     """Discover French TALN papers outside the selected JEP-TALN-RECITAL sources."""
+    return list_french_distractor_candidates(seed, source_ids)[:n]
+
+
+def list_french_distractor_candidates(
+    seed: int,
+    source_ids: set[str] | None = None,
+) -> list[PaperMeta]:
+    """Return all eligible French TALN metadata in one deterministic order."""
     source_ids = source_ids or set()
     candidates: list[PaperMeta] = []
     for paper in _all_papers():
@@ -198,7 +206,7 @@ def list_french_distractors(
         candidates.append(paper)
     rng = random.Random(seed)
     rng.shuffle(candidates)
-    return candidates[:n]
+    return candidates
 
 
 def _french_abstract(text: str | None) -> bool:
