@@ -9,6 +9,9 @@ from pilot.evaluate import auc
 from pilot.queries import lexical_leak
 from pilot.retrievers import BM25, rrf
 from pilot.pdf_extract import clean_body
+from pilot.llm import FakeProvider, complete
+import tempfile
+import os
 
 
 class PilotTests(unittest.TestCase):
@@ -35,6 +38,26 @@ class PilotTests(unittest.TestCase):
         self.assertNotIn("Citation", cleaned)
         first_1500 = " ".join(cleaned.split()[:1500])
         self.assertLessEqual(first_1500.lower().count("paper title"), 1)
+
+    def test_llm_second_identical_call_hits_cache(self):
+        provider = FakeProvider("cached")
+        with tempfile.TemporaryDirectory() as directory:
+            old_provider, old_model = os.environ.get("LLM_PROVIDER"), os.environ.get("LLM_MODEL")
+            os.environ["LLM_PROVIDER"] = "fake"
+            os.environ["LLM_MODEL"] = "test-model"
+            try:
+                self.assertEqual(complete("prompt", provider=provider, cache_dir=Path(directory)), "cached")
+                self.assertEqual(complete("prompt", provider=provider, cache_dir=Path(directory)), "cached")
+                self.assertEqual(provider.calls, 1)
+            finally:
+                if old_provider is None:
+                    os.environ.pop("LLM_PROVIDER", None)
+                else:
+                    os.environ["LLM_PROVIDER"] = old_provider
+                if old_model is None:
+                    os.environ.pop("LLM_MODEL", None)
+                else:
+                    os.environ["LLM_MODEL"] = old_model
 
 
 if __name__ == "__main__":
