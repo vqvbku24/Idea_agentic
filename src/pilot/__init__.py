@@ -1,0 +1,2 @@
+"""Offline-capable pilot components."""
+

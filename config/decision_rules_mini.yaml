@@ -1,0 +1,14 @@
+E1:
+  check: "pipeline and data"
+  threshold: "at least 15 eligible sources and 60 accepted queries"
+E2:
+  check: "hybrid_rrf finds at least 90 percent of V0 sources in top 10"
+E3:
+  check: "hardest variant has at least 5 misses out of 20"
+E4:
+  check: "report native versus en_abstract and translation gap descriptively"
+E5:
+  check: "report human-query hits and misses without tuning"
+E6:
+  check: "report facets in body but absent from English abstract"
+note: "Descriptive existence criteria from PILOT_SPEC.md; do not treat demo values as evidence."

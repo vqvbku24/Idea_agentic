@@ -1,0 +1,9 @@
+seed: 13
+n_source: 20
+top_k: 10
+bootstrap_resamples: 1000
+variants: [V0, V1, V2, V3]
+index_views: [native, en_abstract, both]
+retrievers: [bm25]
+note: "Freeze before the first real-data run; the offline demo is not evidence."
+
