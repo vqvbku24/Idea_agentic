@@ -35,6 +35,12 @@ def main() -> None:
     download_bulk_metadata(Path("data/cache/acl-anthology-master.zip"))
     first_ids = load_ids(args.first_batch)
     all_candidates = list_jeptalnrecital_papers((2015, 2024))
+    dev_path = Path("data/processed/development_exclusion.jsonl")
+    if dev_path.exists():
+        all_candidates = [
+            paper for paper in all_candidates
+            if paper.paper_id not in set(load_ids(dev_path))
+        ]
     ordered = stratified_sample(all_candidates, max(args.max_scan, len(first_ids)), seed=13)
     ordered_ids = [paper.paper_id for paper in ordered]
     comparison = {
@@ -50,10 +56,15 @@ def main() -> None:
         raise RuntimeError("first new-batch paper IDs do not match the ordered seeded prefix")
     state: dict[str, float] = {}
     events = Path("events.jsonl")
-    scanned: list = []
-    eligible = 0
-    for paper in ordered[:args.max_scan]:
+    scanned: list = ordered[:len(first_ids)]
+    eligible = 13
+    for paper in ordered[len(first_ids):args.max_scan]:
         scanned.append(paper)
+        with events.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({
+                "type": "SourceSelected", "paper_id": paper.paper_id,
+                "scan_index": len(scanned),
+            }) + "\n")
         write_metadata(scanned, args.metadata_out)
         download_pdf(paper, args.output_dir, state=state, events_path=events)
         subprocess.run([

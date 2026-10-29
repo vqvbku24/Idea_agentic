@@ -191,14 +191,21 @@ def list_french_distractors(
     candidates: list[PaperMeta] = []
     for paper in _all_papers():
         venue = paper.venue.lower()
-        if "taln" not in venue or venue == "jeptalnrecital":
+        if "taln" not in venue:
             continue
-        if paper.paper_id in source_ids or paper.language not in {"fra", "fre", "fr"}:
+        if paper.paper_id in source_ids or not _french_abstract(paper.abstract_meta):
             continue
         candidates.append(paper)
     rng = random.Random(seed)
     rng.shuffle(candidates)
     return candidates[:n]
+
+
+def _french_abstract(text: str | None) -> bool:
+    if not text:
+        return False
+    words = set(text.lower().split())
+    return len(words & {"les", "des", "une", "dans", "pour", "avec", "cette", "nous"}) >= 2
 
 
 def list_jeptalnrecital_papers(years: tuple[int, int]) -> list[PaperMeta]:
