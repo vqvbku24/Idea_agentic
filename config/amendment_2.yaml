@@ -1,0 +1,7 @@
+rationale: "defects found by manual review (T1) and diagnostics BEFORE any disguised query was run: (a) header regex swallows the first abstract line, (b) English title/challenge label prepended to en_abstract, (c) front matter (title, authors, affiliations, emails, keywords) kept in body, (d) English keywords inside body_fr"
+scope:
+  cleaning_only: true
+  eligibility_thresholds_unchanged: true
+  applied_to: [sources, development, distractors]
+views:
+  native_kw_en: "native + keywords_en"

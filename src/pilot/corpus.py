@@ -16,6 +16,7 @@ class Document:
     abstract_en: str = ""
     body_fr: str = ""
     year: int = 0
+    keywords_en: str = ""
 
     @classmethod
     def from_dict(cls, value: dict) -> "Document":
@@ -51,20 +52,25 @@ def write_jsonl(documents: Iterable[Document], path: Path) -> None:
 def build_index_views(
     documents: Iterable[Document], body_words: int = 1500
 ) -> dict[str, dict[str, str]]:
-    views = {"native": {}, "en_abstract": {}, "both": {}}
+    views = {"native": {}, "native_abstract": {}, "en_abstract": {}, "both": {}}
     for document in documents:
         if document.lang.lower().startswith("en"):
             native = f"{document.title}\n{document.abstract_en}".strip()
             views["native"][document.doc_id] = native
+            views["native_abstract"][document.doc_id] = native
+            views.setdefault("native_kw_en", {})[document.doc_id] = native
             views["en_abstract"][document.doc_id] = native
             views["both"][document.doc_id] = native
             continue
         body = " ".join(document.body_fr.split()[:body_words])
         native = f"{document.title}\n{document.abstract_fr}\n{body}".strip()
+        native_abstract = f"{document.title}\n{document.abstract_fr}".strip()
+        native_kw_en = f"{native}\n{document.keywords_en}".strip()
         english = f"{document.title}\n{document.abstract_en}".strip()
         views["native"][document.doc_id] = native
+        views["native_abstract"][document.doc_id] = native_abstract
+        views.setdefault("native_kw_en", {})[document.doc_id] = native_kw_en
         if document.abstract_en.strip():
             views["en_abstract"][document.doc_id] = english
             views["both"][document.doc_id] = f"{native}\n{english}"
     return views
-

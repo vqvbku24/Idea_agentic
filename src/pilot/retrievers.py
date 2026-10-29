@@ -28,6 +28,7 @@ class BM25:
     def __init__(self, documents: dict[str, str], k1: float = 1.5, b: float = 0.75):
         if not documents:
             raise ValueError("cannot index an empty view")
+        self.documents = dict(documents)
         self.doc_ids = list(documents)
         self.k1, self.b = k1, b
         self.tokens = {doc_id: tokenize(text) for doc_id, text in documents.items()}
@@ -83,10 +84,12 @@ class DenseBgeM3:
                 "dense_bge_m3 requires transformers, torch, and numpy"
             ) from exc
         self._np, self._torch = np, torch
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.max_length = max_length
         self.batch_size = batch_size
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
         self.model = AutoModel.from_pretrained(self.model_id)
+        self.model.to(self.device)
         self.model.eval()
         self.embeddings: dict[str, dict[str, Any]] = {}
         self.doc_ids: dict[str, list[str]] = {}
@@ -95,9 +98,12 @@ class DenseBgeM3:
             self.embeddings[view] = self._load_or_encode(view, documents, cache_dir)
 
     def _cache_path(self, view: str, documents: dict[str, str], cache_dir: Path) -> Path:
+        text_hash = hashlib.sha256(
+            json.dumps(documents, sort_keys=True, ensure_ascii=False).encode("utf-8")
+        ).hexdigest()
         digest = hashlib.sha256(
             json.dumps(
-                {"model": self.model_id, "max_length": self.max_length, "documents": documents},
+                {"model": self.model_id, "max_length": self.max_length, "text_hash": text_hash},
                 sort_keys=True,
                 ensure_ascii=False,
             ).encode("utf-8")
@@ -115,10 +121,10 @@ class DenseBgeM3:
                 max_length=self.max_length,
                 return_tensors="pt",
             )
+            batch = {key: value.to(self.device) for key, value in batch.items()}
             with self._torch.no_grad():
                 output = self.model(**batch).last_hidden_state
-            mask = batch["attention_mask"].unsqueeze(-1)
-            pooled = (output * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
+            pooled = output[:, 0, :]
             pooled = self._torch.nn.functional.normalize(pooled, p=2, dim=1)
             vectors.append(pooled.cpu().numpy())
         return self._np.vstack(vectors) if vectors else self._np.empty((0, 1))
@@ -173,6 +179,7 @@ class DocTranslateBM25:
             doc_id: self._translate_cached(doc_id, text, cache_dir)
             for doc_id, text in native_views.items()
         }
+        self.translated_texts = translated
         self.index = BM25(translated)
         self.doc_ids = self.index.doc_ids
 
