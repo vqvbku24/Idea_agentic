@@ -158,6 +158,9 @@ class DocTranslateBM25:
     """BM25 over French native views translated in <=400-token chunks."""
 
     model_id = "Helsinki-NLP/opus-mt-fr-en"
+    _shared_tokenizer = None
+    _shared_model = None
+    _shared_device = None
 
     def __init__(
         self,
@@ -169,12 +172,22 @@ class DocTranslateBM25:
             raise ValueError("translation chunks must be <= 400 tokens")
         try:
             from transformers import AutoModelForSeq2SeqLM, MarianTokenizer
+            import torch
         except ImportError as exc:
             raise RuntimeError("doc_translate_bm25 requires transformers") from exc
-        self.tokenizer = MarianTokenizer.from_pretrained(self.model_id)
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_id)
-        self.model.eval()
+        if self.__class__._shared_model is None:
+            self.__class__._shared_device = torch.device(
+                "cuda" if torch.cuda.is_available() else "cpu"
+            )
+            self.__class__._shared_tokenizer = MarianTokenizer.from_pretrained(self.model_id)
+            self.__class__._shared_model = AutoModelForSeq2SeqLM.from_pretrained(self.model_id)
+            self.__class__._shared_model.to(self.__class__._shared_device)
+            self.__class__._shared_model.eval()
+        self.tokenizer = self.__class__._shared_tokenizer
+        self.model = self.__class__._shared_model
+        self.device = self.__class__._shared_device
         self.max_tokens = max_tokens
+        self.translated_chunks: dict[str, list[str]] = {}
         translated = {
             doc_id: self._translate_cached(doc_id, text, cache_dir)
             for doc_id, text in native_views.items()
@@ -194,7 +207,10 @@ class DocTranslateBM25:
         cache_dir.mkdir(parents=True, exist_ok=True)
         path = cache_dir / f"{digest}.json"
         if path.exists():
-            return json.loads(path.read_text(encoding="utf-8"))["text"]
+            cached = json.loads(path.read_text(encoding="utf-8"))
+            if "chunks" in cached:
+                self.translated_chunks[doc_id] = list(cached["chunks"])
+                return cached["text"]
         token_ids = self.tokenizer.encode(text, add_special_tokens=False)
         chunk_ids = [
             token_ids[start:start + self.max_tokens]
@@ -207,13 +223,18 @@ class DocTranslateBM25:
                 [{"input_ids": ids, "attention_mask": [1] * len(ids)} for ids in batch],
                 return_tensors="pt",
             )
+            inputs = {key: value.to(self.device) for key, value in inputs.items()}
             output_ids = self.model.generate(**inputs, max_new_tokens=self.max_tokens)
             chunks.extend(
                 self.tokenizer.decode(ids, skip_special_tokens=True)
                 for ids in output_ids
             )
         translated = " ".join(chunks).strip()
-        path.write_text(json.dumps({"text": translated}, ensure_ascii=False), encoding="utf-8")
+        self.translated_chunks[doc_id] = chunks
+        path.write_text(
+            json.dumps({"text": translated, "chunks": chunks}, ensure_ascii=False),
+            encoding="utf-8",
+        )
         return translated
 
     def _torch_inputs(self, token_ids: list[int]) -> dict[str, Any]:

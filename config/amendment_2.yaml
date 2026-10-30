@@ -5,3 +5,16 @@ scope:
   applied_to: [sources, development, distractors]
 views:
   native_kw_en: "native + keywords_en"
+criterion_corrections:
+  date: "2026-10-30"
+  original_criterion_text: "French-abstract self-retrieval passes when Recall@10 >= 0.95 on native_abstract."
+  rationale: "The correction separates language-matched validation for doc_translate_bm25 from the French-query informational diagnostic; no disguised query has been run."
+  disguised_query_run: false
+  french_abstract_self_retrieval:
+    threshold: "Recall@10 >= 0.95 on native_abstract"
+    applies_to: [bm25, dense_bge_m3, hybrid_rrf]
+  doc_translate_bm25:
+    language_matched_control: "English-abstract query"
+    threshold: null
+    french_query: "informational only"
+    translated_chunks_still_french: "report share"
