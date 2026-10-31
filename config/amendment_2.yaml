@@ -18,3 +18,13 @@ criterion_corrections:
     threshold: null
     french_query: "informational only"
     translated_chunks_still_french: "report share"
+decision:
+  date: "2026-10-31"
+  reviewer: "<initials>"
+  signed_gate: "data/human/SIGNED_GATE.json"
+  v21_reviewed_items: 26
+  v21_false_positives_including_unsure: 20
+  v21_false_positive_threshold: 2
+  outcome: "rejected"
+  reason: "The heuristic rule exceeded the false-positive threshold; no v2.1 extractor was applied."
+  sensitivity_analysis: "results/real/sensitivity_native_abstract_x2.jsonl"

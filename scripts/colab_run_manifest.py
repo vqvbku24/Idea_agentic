@@ -6,6 +6,7 @@ import json
 import platform
 import subprocess
 import sys
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,6 +26,42 @@ def tracked_files(root: Path) -> list[Path]:
     return files
 
 
+def verify_data_manifest(root: Path) -> tuple[dict, str]:
+    path = root / "results/real/data_manifest.json"
+    if not path.exists():
+        raise SystemExit(f"ABORT: missing {path}")
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    failures = []
+    bundle = root / "results/real" / manifest.get("bundle", "")
+    archive = zipfile.ZipFile(bundle) if bundle.exists() else None
+    for item in manifest.get("files", []):
+        target = root / Path(item["path"])
+        actual = sha256(target) if target.exists() else None
+        if actual is None and archive is not None and item["path"] in archive.namelist():
+            digest = hashlib.sha256(archive.read(item["path"])).hexdigest()
+            actual = digest
+        if actual is None:
+            failures.append(f"missing {item['path']}")
+        elif actual != item["sha256"]:
+            failures.append(f"hash mismatch {item['path']}")
+    if archive is not None:
+        archive.close()
+    if failures:
+        raise SystemExit("ABORT: data manifest verification failed:\n" + "\n".join(failures))
+    return manifest, sha256(path)
+
+
+def verify_view_manifest(root: Path) -> tuple[dict, str]:
+    path = root / "results/real/view_manifest.json"
+    if not path.exists():
+        raise SystemExit(f"ABORT: missing {path}")
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    local = root / "results/real/view_manifest.local.json"
+    if local.exists() and local.read_bytes() != path.read_bytes():
+        raise SystemExit("ABORT: view manifest differs from the local manifest")
+    return manifest, sha256(path)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Record and validate a reproducible Colab run.")
     parser.add_argument("--root", type=Path, default=Path.cwd())
@@ -37,6 +74,8 @@ def main() -> None:
     parser.add_argument("--translation-model", default="Helsinki-NLP/opus-mt-fr-en")
     args = parser.parse_args()
     root = args.root.resolve()
+    data_manifest, data_manifest_hash = verify_data_manifest(root)
+    view_manifest, view_manifest_hash = verify_view_manifest(root)
     status = run(root, ["status", "--porcelain"])
     if status:
         raise SystemExit("ABORT: working tree is dirty:\n" + status)
@@ -82,6 +121,14 @@ def main() -> None:
             "translation_chunk_tokens": args.translation_chunk_tokens,
         },
         "file_hashes": hashes,
+        "data_manifest": {
+            "sha256": data_manifest_hash,
+            "files": data_manifest.get("files", []),
+        },
+        "view_manifest": {
+            "sha256": view_manifest_hash,
+            "views": view_manifest.get("views", {}),
+        },
         "validation": {"working_tree_clean": True, "hashes_match_head": True},
     }
     output.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
