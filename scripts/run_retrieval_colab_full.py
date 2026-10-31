@@ -90,11 +90,11 @@ def main() -> None:
     raw_queries = load_jsonl(queries_path)
     queries = [
         Query(
-            query_id=f"{q['source_id']}_{q['variant']}",
             source_id=q["source_id"],
             variant=q["variant"],
             text=q["query_text"],
-            facets={"kept": q.get("kept_facets", [])},
+            kept_facets=tuple(q.get("kept_facets", [])),
+            lexical_leak=float(q.get("lexical_leak", 0.0)),
             accepted=bool(q.get("accepted", False)),
         )
         for q in raw_queries
