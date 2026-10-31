@@ -114,11 +114,11 @@ def main() -> None:
     dense = DenseBgeM3(views, cache_dir=dense_cache, max_length=1024)
 
     french_by_view = {
-        view: {doc.doc_id: texts[doc.doc_id] for doc in docs if doc.lang == "fr"}
+        view: {doc.doc_id: texts[doc.doc_id] for doc in docs if doc.lang == "fr" and doc.doc_id in texts}
         for view, texts in views.items()
     }
     english_by_view = {
-        view: {doc.doc_id: texts[doc.doc_id] for doc in docs if doc.lang == "en"}
+        view: {doc.doc_id: texts[doc.doc_id] for doc in docs if doc.lang == "en" and doc.doc_id in texts}
         for view, texts in views.items()
     }
 
