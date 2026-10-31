@@ -32,6 +32,7 @@ def collect_files(root: Path, data_root: Path) -> list[Path]:
     for name in (
         "papers_x2.jsonl",
         "development_papers_x2.jsonl",
+        "french_distractors_native.jsonl",
         "french_distractors_native_x2.jsonl",
         "extraction_details.csv",
     ):
