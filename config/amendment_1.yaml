@@ -1,0 +1,8 @@
+rationale: "length and language confounds found in diagnostics, before any disguised query was run"
+views:
+  native_abstract:
+    french_docs: "title + abstract_fr only"
+    english_distractors: "title + abstract_en"
+    length_matched: true
+sensitivity:
+  english_distractor_count: [500, 100]
