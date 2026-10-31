@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def artifact_root() -> Path:
-    for candidate in (ROOT / "results/real", ROOT / "results/real/real", ROOT / "results/real-colab/real"):
+    for candidate in (ROOT / "results/real/real", ROOT / "results/real-colab/real", ROOT / "results/real"):
         if (candidate / "papers_x2.jsonl").exists():
             return candidate
     raise FileNotFoundError("papers_x2.jsonl not found in results/real artefact roots")
@@ -27,7 +27,7 @@ def sha256(path: Path) -> str:
 def collect_files(root: Path, data_root: Path) -> list[Path]:
     files: list[Path] = []
     for path in sorted(root.glob("*_x2.*")):
-        if path.is_file():
+        if path.is_file() and path.name not in {"run_meta_x2.json", "data_bundle_x2.zip"}:
             files.append(path)
     for name in (
         "papers_x2.jsonl",
@@ -41,8 +41,8 @@ def collect_files(root: Path, data_root: Path) -> list[Path]:
     english = data_root / "english_distractors_metadata.jsonl"
     if english.exists():
         files.append(english)
-    queries = list(ROOT.rglob("queries.jsonl"))
-    files.extend(path for path in queries if "human" not in path.parts)
+    queries = [ROOT / "results/demo/queries.jsonl", root / "queries.jsonl"]
+    files.extend(path for path in queries if path.exists() and "human" not in path.parts)
     return sorted(set(path.resolve() for path in files))
 
 
