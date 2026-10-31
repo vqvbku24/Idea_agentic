@@ -42,7 +42,11 @@ def collect_files(root: Path, data_root: Path) -> list[Path]:
     english = data_root / "english_distractors_metadata.jsonl"
     if english.exists():
         files.append(english)
-    queries = [ROOT / "results/demo/queries.jsonl", root / "queries.jsonl"]
+    queries = [
+        ROOT / "results/demo/queries.jsonl",
+        ROOT / "results/real/queries.jsonl",
+        root / "queries.jsonl",
+    ]
     files.extend(path for path in queries if path.exists() and "human" not in path.parts)
     return sorted(set(path.resolve() for path in files))
 
@@ -70,7 +74,7 @@ def main() -> None:
     bundle_path = output_root / "data_bundle_x2.zip"
     with zipfile.ZipFile(bundle_path, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
         for path in files:
-            if path.parent == root:
+            if path.parent == root or path.parent == output_root:
                 relative = (Path("results/real") / path.name).as_posix()
                 canonical = output_root / path.name
                 if path.resolve() != canonical.resolve():

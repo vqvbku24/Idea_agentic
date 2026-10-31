@@ -49,10 +49,13 @@ class FakeProvider:
 class GroqProvider:
     """Provider for Groq API with multi-key rotation and rate-limit backoff."""
 
-    def __init__(self, keys: list[str]):
-        if not keys:
+    def __init__(self, keys: list[str] | str):
+        if isinstance(keys, str):
+            self.keys = [k.strip() for k in keys.split(",") if k.strip()]
+        else:
+            self.keys = [k.strip() for k in keys if k.strip()]
+        if not self.keys:
             raise ValueError("No Groq API keys provided")
-        self.keys = keys
         self.current_key_idx = 0
 
     def complete(self, prompt: str, system: str | None = None, temperature: float = 0.0, model: str | None = None) -> str:
@@ -62,7 +65,7 @@ class GroqProvider:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        max_attempts = len(self.keys) * 3
+        max_attempts = len(self.keys) * 4
         for attempt in range(max_attempts):
             api_key = self.keys[self.current_key_idx]
             url = "https://api.groq.com/openai/v1/chat/completions"
@@ -79,11 +82,11 @@ class GroqProvider:
                 res = requests.post(url, headers=headers, json=payload, timeout=60)
                 if res.status_code == 200:
                     data = res.json()
+                    time.sleep(0.5)
                     return data["choices"][0]["message"]["content"]
                 elif res.status_code == 429:
-                    # Rate limit: advance key and pause
                     self.current_key_idx = (self.current_key_idx + 1) % len(self.keys)
-                    delay = min(2.0 * (attempt + 1), 60.0)
+                    delay = min(5.0 * (attempt + 1), 60.0)
                     time.sleep(delay)
                     continue
                 else:
@@ -98,12 +101,16 @@ class GroqProvider:
 
 
 class GeminiProvider:
-    """Provider for Gemini API via OpenAI-compatible endpoint."""
+    """Provider for Gemini API via OpenAI-compatible endpoint with multi-key rotation and pacing."""
 
-    def __init__(self, key: str):
-        if not key:
+    def __init__(self, keys: list[str] | str):
+        if isinstance(keys, str):
+            self.keys = [k.strip() for k in keys.split(",") if k.strip()]
+        else:
+            self.keys = [k.strip() for k in keys if k.strip()]
+        if not self.keys:
             raise ValueError("No Gemini API key provided")
-        self.key = key
+        self.current_key_idx = 0
 
     def complete(self, prompt: str, system: str | None = None, temperature: float = 0.0, model: str | None = None) -> str:
         target_model = model or os.environ.get("JUDGE_MODEL", "gemini-3.5-flash")
@@ -113,43 +120,51 @@ class GeminiProvider:
         messages.append({"role": "user", "content": prompt})
 
         url = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-        headers = {
-            "Authorization": f"Bearer {self.key}",
-            "Content-Type": "application/json",
-        }
         payload = {
             "model": target_model,
             "messages": messages,
             "temperature": temperature,
         }
 
-        for attempt in range(5):
+        max_attempts = max(len(self.keys) * 4, 12)
+        for attempt in range(max_attempts):
+            key = self.keys[self.current_key_idx]
+            headers = {
+                "Authorization": f"Bearer {key}",
+                "Content-Type": "application/json",
+            }
             try:
                 res = requests.post(url, headers=headers, json=payload, timeout=60)
                 if res.status_code == 200:
                     data = res.json()
-                    # Small pacing delay to avoid hitting RPM limit
-                    time.sleep(1.0)
+                    # Pacing delay: 4.5s ensures <= 13.3 calls/min (safely within 15 RPM free tier limit)
+                    time.sleep(4.5)
                     return data["choices"][0]["message"]["content"]
                 elif res.status_code in (429, 503):
-                    time.sleep(3.0 * (attempt + 1))
+                    old_idx = self.current_key_idx
+                    self.current_key_idx = (self.current_key_idx + 1) % len(self.keys)
+                    is_daily = "per day" in res.text or "RESOURCE_EXHAUSTED" in res.text
+                    wait_time = 2.0 if is_daily else min(10.0 * (attempt // len(self.keys) + 1), 60.0)
+                    print(f"  [Gemini {res.status_code}] Key {old_idx+1}/{len(self.keys)} limit hit ({'daily quota' if is_daily else 'rate limit'}). Rotating to key {self.current_key_idx+1} (cooling {wait_time}s)...")
+                    time.sleep(wait_time)
                     continue
                 else:
                     raise RuntimeError(f"Gemini API error ({res.status_code}): {res.text}")
             except requests.exceptions.RequestException as e:
-                if attempt == 4:
+                self.current_key_idx = (self.current_key_idx + 1) % len(self.keys)
+                if attempt == max_attempts - 1:
                     raise RuntimeError(f"Gemini request failed: {e}")
-                time.sleep(2.0)
+                time.sleep(3.0)
 
-        raise RuntimeError("Gemini API failed after multiple retries")
+        raise RuntimeError(f"Gemini API failed after rotating through all {len(self.keys)} keys")
 
 
 class HybridGroqGeminiProvider:
     """Hybrid provider routing generator models to Groq and judge models to Gemini."""
 
-    def __init__(self, groq_keys: list[str], gemini_key: str):
+    def __init__(self, groq_keys: list[str], gemini_keys: list[str] | str):
         self.groq = GroqProvider(groq_keys)
-        self.gemini = GeminiProvider(gemini_key)
+        self.gemini = GeminiProvider(gemini_keys)
 
     def complete(self, prompt: str, system: str | None = None, temperature: float = 0.0, model: str | None = None) -> str:
         target_model = model or os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
@@ -274,13 +289,15 @@ def _provider_from_environment(name: str) -> Provider:
         keys = [k.strip() for k in keys_str.split(",") if k.strip()]
         return GroqProvider(keys)
     elif name == "gemini":
-        key = os.environ.get("GEMINI_API_KEY", "").strip()
-        return GeminiProvider(key)
+        keys_str = os.environ.get("GEMINI_API_KEYS", "") or os.environ.get("GEMINI_API_KEY", "")
+        keys = [k.strip() for k in keys_str.split(",") if k.strip()]
+        return GeminiProvider(keys)
     elif name == "hybrid_groq_gemini":
         keys_str = os.environ.get("GROQ_API_KEYS", "") or os.environ.get("GROQ_API_KEY", "")
         keys = [k.strip() for k in keys_str.split(",") if k.strip()]
-        gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        return HybridGroqGeminiProvider(keys, gemini_key)
+        gemini_keys_str = os.environ.get("GEMINI_API_KEYS", "") or os.environ.get("GEMINI_API_KEY", "")
+        gemini_keys = [k.strip() for k in gemini_keys_str.split(",") if k.strip()]
+        return HybridGroqGeminiProvider(keys, gemini_keys)
 
     raise RuntimeError(
         f"provider {name!r} is not implemented in the offline pilot; no provider call was made"

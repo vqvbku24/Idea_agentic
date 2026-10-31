@@ -3,17 +3,17 @@ banner: "EXPLORATORY - agent-proxy labels, human verification pending"
 date: "2026-10-31"
 
 models:
-  generator: "openai/gpt-oss-120b"
+  generator: "qwen/qwen3.8-27b"
   generator_platform: "Groq"
-  judge: "gemini-3.5-flash"
-  judge_platform: "Google Gemini"
-  provider: "hybrid_groq_gemini"
+  judge: "openai/gpt-oss-120b"
+  judge_platform: "Groq"
+  provider: "groq"
   temperature: 0.0
   call_cap: 500
 
 hashes:
-  data_bundle_x2_sha256: "481397880868706a203aca508477d521d07dfb47f8c90d3ada4679514bdcdf44"
-  data_manifest_sha256: "5406a575714bee3e2b3f2b73b91db44421cad8153e592334d6c4ede72ae71df6"
+  data_bundle_x2_sha256: "2da4597326cfbe9a709bac6cc5f49a66e9c9799882716185ffe206f5cf09d08e"
+  data_manifest_sha256: "4ffe710e975ac498192309c1dee9aaf9d1831bc629b1adef3850edce48ad5f13"
 
 absent_freeze_tags:
   - tag: "human-queries-frozen"

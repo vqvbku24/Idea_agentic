@@ -31,3 +31,5 @@ data/human/*
 
 # Keep the repository's committed demo marker/report, but ignore new demo outputs
 results/demo/*
+
+cache/
