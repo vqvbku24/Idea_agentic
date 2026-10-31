@@ -34,12 +34,18 @@ def verify_data_manifest(root: Path) -> tuple[dict, str]:
     failures = []
     bundle = root / "results/real" / manifest.get("bundle", "")
     archive = zipfile.ZipFile(bundle) if bundle.exists() else None
+    archive_hashes = {
+        item["path"]: hashlib.sha256(archive.read(item["path"])).hexdigest()
+        for item in manifest.get("files", [])
+        if archive is not None and item["path"] in archive.namelist()
+    }
     for item in manifest.get("files", []):
         target = root / Path(item["path"])
-        actual = sha256(target) if target.exists() else None
-        if actual is None and archive is not None and item["path"] in archive.namelist():
-            digest = hashlib.sha256(archive.read(item["path"])).hexdigest()
-            actual = digest
+        bundled = archive_hashes.get(item["path"])
+        if bundled is not None and bundled != item["sha256"]:
+            failures.append(f"bundle hash mismatch {item['path']}")
+            continue
+        actual = sha256(target) if target.exists() else bundled
         if actual is None:
             failures.append(f"missing {item['path']}")
         elif actual != item["sha256"]:
