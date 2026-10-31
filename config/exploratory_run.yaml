@@ -1,0 +1,25 @@
+run_type: exploratory
+banner: "EXPLORATORY - agent-proxy labels, human verification pending"
+date: "2026-10-31"
+
+models:
+  generator: "openai/gpt-oss-120b"
+  generator_platform: "Groq"
+  judge: "gemini-3.5-flash"
+  judge_platform: "Google Gemini"
+  provider: "hybrid_groq_gemini"
+  temperature: 0.0
+  call_cap: 500
+
+hashes:
+  data_bundle_x2_sha256: "481397880868706a203aca508477d521d07dfb47f8c90d3ada4679514bdcdf44"
+  data_manifest_sha256: "5406a575714bee3e2b3f2b73b91db44421cad8153e592334d6c4ede72ae71df6"
+
+absent_freeze_tags:
+  - tag: "human-queries-frozen"
+    reason: "Queries are agent-drafted proxies (H-agent); full Mode A independent human authoring has not occurred."
+  - tag: "proxy-queries-frozen"
+    reason: "Run is exploratory for feasibility signal; permanent freeze tags deferred until feasibility confirmation."
+  - tag: "facet-audit-proxy"
+    reason: "Facet audit remains exploratory draft pending full human re-coding."
+
