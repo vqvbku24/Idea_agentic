@@ -28,3 +28,8 @@ decision:
   outcome: "rejected"
   reason: "The heuristic rule exceeded the false-positive threshold; no v2.1 extractor was applied."
   sensitivity_analysis: "results/real/sensitivity_native_abstract_x2.jsonl"
+tag_notes: "extractor-v2 and amendment-2 were created on 2026-10-29 (commit c3bbeec), before the signed gate (2026-10-31) and before the Colab review (2026-10-31). No tag was moved or deleted."
+future_sensitivity_analysis:
+  declared: true
+  description: "view en_abstract_titlestripped for sources with a confirmed redaction"
+  run: false

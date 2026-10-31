@@ -84,15 +84,37 @@ def write_leak_cases() -> int:
         "",
         f"Total failed cells: {len(failed)}.",
         "",
-        "| File | Paper ID | First 200 chars of abstract_en | Rule |",
-        "|---|---|---|---|",
+        "| File | Paper ID | Triggered Field | First 200 chars of offending field | Rule |",
+        "|---|---|---|---|---|",
     ]
+    blind_cache = {}
     for row in failed:
-        abstract = " ".join(docs[row["paper_id"]].get("abstract_en", "").split())[:200]
-        safe_abstract = abstract.replace("|", "\\|")
+        filename = row["file"]
+        if filename not in blind_cache:
+            p = ROOT / "data/human" / filename
+            blind_cache[filename] = {r["paper_id"]: r for r in read_jsonl(p)} if p.exists() else {}
+        input_row = blind_cache[filename].get(row["paper_id"], {})
+        if filename == "t4_passB_input.jsonl":
+            triggered_field = "body_fr"
+            field_text = input_row.get("body_fr", "")
+        elif filename == "t4_passA_input.jsonl":
+            triggered_field = "abstract_en"
+            field_text = input_row.get("abstract_en", "")
+        elif filename == "t3_input.jsonl":
+            if row["check"] == "english_title_like_start":
+                triggered_field = "abstract_en"
+                field_text = input_row.get("abstract_en", "")
+            else:
+                triggered_field = "abstract_en" if row["check"] in ("english_keywords", "at_sign") else "abstract_fr"
+                field_text = input_row.get(triggered_field, "") or input_row.get("abstract_en", "")
+        else:
+            triggered_field = "unknown"
+            field_text = ""
+        snippet = " ".join(str(field_text).split())[:200]
+        safe_snippet = snippet.replace("|", r"\|")
         lines.append(
-            f"| {row['file']} | {row['paper_id']} | "
-            f"{safe_abstract} | {row['check']} |"
+            f"| {row['file']} | {row['paper_id']} | {triggered_field} | "
+            f"{safe_snippet} | {row['check']} |"
         )
     (OUT / "leak_fail_cases_x2.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     return len(failed)

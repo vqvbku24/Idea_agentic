@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from pilot.data_acl import PaperMeta
 from pilot.retrievers import DenseBgeM3
+from leak_checker import check_blind_entry
 
 BLIND_IDS = [
     "2018.jeptalnrecital-long.14", "2019.jeptalnrecital-court.18",
@@ -69,20 +70,14 @@ def write_blind_and_checks(docs: dict[str, dict], metas: dict[str, PaperMeta]) -
         )
         for row in output:
             doc, meta = docs[row["paper_id"]], metas[row["paper_id"]]
-            text = " ".join(str(value) for key, value in row.items() if key != "paper_id")
-            checks = {
-                "french_title": doc["title"].casefold() not in text.casefold(),
-                "english_title_like_start": not bool(re.match(r"^(?:[A-Z][a-z]+ ){2,}", text)),
-                "english_keywords": not bool(re.search(r"\b(?:keywords?|key words)\b", text, re.I)),
-                "at_sign": "@" not in text,
-                "author_names": not any(author.casefold() in text.casefold() for author in meta.authors if author),
-                "affiliations": not bool(re.search(r"\b(?:université|university|cnrs|laboratoire|laboratory)\b", text, re.I)),
-            }
-            if filename == "t4_passB_input.jsonl":
-                checks["english_abstract_in_passB"] = doc["abstract_en"].casefold() not in text.casefold()
-                checks["first_page_front_matter"] = checks["affiliations"] and checks["at_sign"]
-            for check, passed in checks.items():
-                records.append({"file": filename, "paper_id": row["paper_id"], "check": check, "status": "PASS" if passed else "FAIL"})
+            row_checks = check_blind_entry(
+                filename=filename,
+                row=row,
+                doc_title=doc["title"],
+                doc_abstract_en=doc.get("abstract_en", ""),
+                authors=meta.authors,
+            )
+            records.extend(row_checks)
     return records
 
 

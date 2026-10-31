@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+
+from leak_checker import check_blind_entry, load_confirmed_redactions, apply_redaction
+
 BLIND_IDS = [
     "2018.jeptalnrecital-long.14", "2019.jeptalnrecital-court.18",
     "2015.jeptalnrecital-court.13", "2017.jeptalnrecital-court.5",
@@ -49,6 +55,14 @@ def strip_title_like_first_line(text: str) -> tuple[str, str]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Stage B blind input generator and leak checker")
+    parser.add_argument(
+        "--apply-confirmed-redactions",
+        action="store_true",
+        help="Rebuild t3_input.jsonl and t4_passA_input.jsonl applying ONLY entries with human_confirmed:true from blind_redactions.json. Does not touch t4_passB_input.jsonl.",
+    )
+    args = parser.parse_args()
+
     data = artifact_root()
     docs = {row["doc_id"]: row for name in ("papers_x2.jsonl", "development_papers_x2.jsonl") for row in jsonl(data / name)}
     metas = {}
@@ -56,6 +70,11 @@ def main() -> None:
         path = ROOT / "data/processed" / name
         if path.exists():
             metas.update({row["paper_id"]: row for row in jsonl(path)})
+
+    confirmed_redactions = load_confirmed_redactions() if args.apply_confirmed_redactions else {}
+    if args.apply_confirmed_redactions:
+        print(f"Applying {len(confirmed_redactions)} confirmed redactions to t3 and t4_passA.")
+
     checks = []
     for filename, fields in (
         ("t3_input.jsonl", ("abstract_en", "abstract_fr")),
@@ -67,40 +86,48 @@ def main() -> None:
             doc = docs[paper_id]
             row = {"paper_id": paper_id}
             for field in fields:
-                row[field] = clean(doc[field], doc["title"], field == "body_fr")
+                cleaned = clean(doc[field], doc["title"], field == "body_fr")
+                # Apply confirmed redactions ONLY to t3 and t4_passA on matching fields
+                if (
+                    args.apply_confirmed_redactions
+                    and filename in ("t3_input.jsonl", "t4_passA_input.jsonl")
+                    and paper_id in confirmed_redactions
+                    and confirmed_redactions[paper_id]["field"] == field
+                ):
+                    cleaned = apply_redaction(cleaned, confirmed_redactions[paper_id]["prefix_text"])
+                row[field] = cleaned
             output.append(row)
-            text = " ".join(str(value) for key, value in row.items() if key != "paper_id")
+
             meta = metas.get(paper_id, {})
             authors = meta.get("authors", [])
-            checks.extend([
-                {"file": filename, "paper_id": paper_id, "check": "french_title",
-                 "status": "FAIL" if doc["title"].casefold() in text.casefold() else "PASS"},
-                {"file": filename, "paper_id": paper_id, "check": "english_title_like_start",
-                 "status": "FAIL" if re.match(r"^(?:[A-Z][a-z]+ ){2,}", text) else "PASS"},
-                {"file": filename, "paper_id": paper_id, "check": "english_keywords",
-                 "status": "FAIL" if re.search(r"\b(?:keywords?|key words)\b", text, re.I) else "PASS"},
-                {"file": filename, "paper_id": paper_id, "check": "at_sign",
-                 "status": "FAIL" if "@" in text else "PASS"},
-                {"file": filename, "paper_id": paper_id, "check": "author_names",
-                 "status": "FAIL" if any(author.casefold() in text.casefold() for author in authors if author) else "PASS"},
-                {"file": filename, "paper_id": paper_id, "check": "affiliations",
-                 "status": "FAIL" if re.search(r"\b(?:université|university|cnrs|laboratoire|laboratory)\b", text, re.I) else "PASS"},
-            ])
-            if filename == "t4_passB_input.jsonl":
-                checks.extend([
-                    {"file": filename, "paper_id": paper_id, "check": "english_abstract_in_passB",
-                     "status": "FAIL" if doc["abstract_en"].casefold() in text.casefold() else "PASS"},
-                    {"file": filename, "paper_id": paper_id, "check": "first_page_front_matter",
-                     "status": "FAIL" if not ("@" not in text and not re.search(r"\b(?:université|university|cnrs|laboratoire|laboratory)\b", text, re.I)) else "PASS"},
-                ])
+            row_checks = check_blind_entry(
+                filename=filename,
+                row=row,
+                doc_title=doc["title"],
+                doc_abstract_en=doc.get("abstract_en", ""),
+                authors=authors,
+            )
+            checks.extend(row_checks)
+
+        # Write blind input file
         (ROOT / "data/human" / filename).write_text(
             "\n".join(json.dumps(row, ensure_ascii=False) for row in output) + "\n", encoding="utf-8"
         )
+
     out = ROOT / "results/real"
+    out.mkdir(parents=True, exist_ok=True)
     with (out / "blind_leak_checks_x2.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=["file", "paper_id", "check", "status"])
         writer.writeheader()
         writer.writerows(checks)
+
+    # Also keep colab results in sync if present
+    colab_dir = ROOT / "results/real-colab/real"
+    if colab_dir.exists():
+        with (colab_dir / "blind_leak_checks_x2.csv").open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=["file", "paper_id", "check", "status"])
+            writer.writeheader()
+            writer.writerows(checks)
 
     source_ids = [row["doc_id"] for row in jsonl(data / "papers_x2.jsonl")]
     sensitivity = []
@@ -117,6 +144,7 @@ def main() -> None:
         "\n".join(json.dumps(row, ensure_ascii=False) for row in sensitivity) + ("\n" if sensitivity else ""),
         encoding="utf-8",
     )
+    fail_count = sum(row['status'] == 'FAIL' for row in checks)
     report = [
         "# Stage B decision: v2.1 rejected",
         "",
@@ -125,7 +153,7 @@ def main() -> None:
         "- Threshold: at most 2, and none among the 20 sources.",
         "- Outcome: **rejected**.",
         "- `src/pilot/pdf_extract.py` and `src/pilot/pdf_extract_v2.py` were not changed.",
-        f"- Rebuilt blind inputs and leak checks: {len(checks)} checks, {sum(row['status'] == 'FAIL' for row in checks)} FAIL.",
+        f"- Rebuilt blind inputs and leak checks: {len(checks)} checks, {fail_count} FAIL.",
         f"- Sensitivity output contains {len(sensitivity)} source abstracts with a removable title-like prefix; it is diagnostic only.",
     ]
     (out / "stage_b_rejected_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
