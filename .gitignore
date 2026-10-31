@@ -1,0 +1,33 @@
+# Python and local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+# Local secrets and environment files
+.env
+.env.*
+!.env.example
+
+# Large/private acquisition inputs
+data/raw/
+data/cache/
+data/results/
+data/events.jsonl
+events.jsonl
+*.pdf
+
+# Generated processing artefacts kept on Drive
+data/processed/*
+!data/processed/sources_final.json
+results/real/*
+results/real-colab/
+retrieval-v2-reports/
+*.tar.gz
+
+# Human-working files stay on Drive; committed templates remain tracked
+data/human/*
+
+# Keep the repository's committed demo marker/report, but ignore new demo outputs
+results/demo/*
