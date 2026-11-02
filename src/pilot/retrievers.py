@@ -241,7 +241,9 @@ class DocTranslateBM25:
         import torch
         return {"input_ids": torch.tensor([token_ids]), "attention_mask": torch.ones((1, len(token_ids)), dtype=torch.long)}
 
-    def rank(self, query: str, view: str = "native", candidates: set[str] | None = None) -> list[tuple[str, float]]:
+    def rank(self, query: str, candidates: set[str] | None = None, view: str = "native") -> list[tuple[str, float]]:
+        if isinstance(candidates, str) and not isinstance(view, set):
+            view, candidates = candidates, None
         return self.index.rank(query, candidates)
 
 
