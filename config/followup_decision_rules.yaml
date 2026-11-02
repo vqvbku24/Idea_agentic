@@ -1,0 +1,49 @@
+# EXPLORATORY - agent-proxy labels, human verification pending
+# Follow-up Study Decision Rules (Starting heuristics, not established thresholds)
+# Frozen in Step A1 before running analysis scripts
+
+banner: "EXPLORATORY - agent-proxy labels, human verification pending"
+
+heuristics:
+  ranking_failure:
+    description: ">= 50% of V1 top-10 misses of the best retriever per view have the source at rank <= 50"
+    target: "v1_top10_misses"
+    condition: "share_rank_lte_50 >= 0.50"
+    threshold: 0.50
+
+  far_miss:
+    description: ">= 50% of those misses have the source at rank > 100"
+    target: "v1_top10_misses"
+    condition: "share_rank_gt_100 >= 0.50"
+    threshold: 0.50
+
+  identifiable:
+    description: "in the oracle-inserted condition the source is ranked top-3 in >= 60% of cases"
+    target: "oracle_inserted_condition"
+    condition: "top3_share >= 0.60"
+    threshold: 0.60
+
+  under_specified:
+    description: "same condition < 30%"
+    target: "oracle_inserted_condition"
+    condition: "top3_share < 0.30"
+    threshold: 0.30
+
+  format_leak_control:
+    description: "no-query control accuracy must be <= 10% (random = 5%), otherwise the probe is invalid"
+    target: "no_query_control"
+    condition: "accuracy <= 0.10"
+    threshold: 0.10
+    random_baseline: 0.05
+
+  routing_headroom:
+    description: "oracle-routing Recall@10 minus the best fixed retriever >= 10 points"
+    target: "routing_vs_best_fixed"
+    condition: "oracle_recall10 - best_fixed_recall10 >= 0.10"
+    threshold: 0.10
+
+  judge_usable:
+    description: "human-judge agreement >= 80% per criterion"
+    target: "human_judge_audit"
+    condition: "agreement >= 0.80"
+    threshold: 0.80
