@@ -1,0 +1,134 @@
+# EXPLORATORY - agent-proxy labels, human verification pending
+# English Terminology Dose-Response Pilot: Prompts
+# Tagged: en-prompts-frozen
+
+banner: "EXPLORATORY - agent-proxy labels, human verification pending"
+
+key_term_extraction:
+  system: "You are an expert NLP and computational linguistics researcher."
+  user_template: |
+    Extract between 6 and 12 distinct key technical terms, methods, problem names, data concepts, or domain phrases from the following abstract.
+
+    CRITICAL REQUIREMENT:
+    Every extracted term MUST appear VERBATIM (word-for-word, case-insensitive) in the abstract text below.
+    Do not invent or rephrase terms.
+
+    ABSTRACT:
+    {abstract}
+
+    Output the terms as a strict JSON list of strings, e.g.:
+    ["term one", "term two", "term three", ...]
+    Output only the JSON array, nothing else.
+
+query_generation:
+  system: "You are an expert NLP researcher formulating a literature search query."
+  user_template_r100: |
+    Write an English research query (40 to 80 words) describing the core idea, problem, methodology, and findings of the research paper below.
+
+    RETENTION LEVEL: R100 (Full Terminology Retention)
+
+    CONSTRAINTS:
+    1. Naturally integrate all of the following KEY TERMS into the query:
+    KEY TERMS:
+    {kept_terms_json}
+
+    2. Do NOT copy verbatim sentences from the abstract or title.
+    3. Keep the query strictly between 40 and 80 words.
+    4. The query must read as a natural literature search inquiry describing a research project or idea.
+
+    PAPER ABSTRACT (FOR CONTEXT ONLY):
+    {abstract}
+
+    OUTPUT FORMAT:
+    Output ONLY the query text as plain text. No quotes, no intro, no preamble.
+
+  user_template_r50: |
+    Write an English research query (40 to 80 words) describing the core idea, problem, methodology, and findings of the research paper below.
+
+    RETENTION LEVEL: R50 (Moderate Terminology Retention / Partial Obfuscation)
+
+    CONSTRAINTS:
+    1. KEPT TERMS (MUST BE NATURALLY INTEGRATED):
+    {kept_terms_json}
+
+    2. FORBIDDEN TERMS (MUST NOT APPEAR):
+    You MUST NOT use ANY of the following FORBIDDEN TERMS, nor their word roots, morphological stems, acronyms, or numbers. Replace them with generic functional descriptions:
+    {removed_terms_json}
+
+    3. Do NOT copy verbatim sentences from the abstract or title.
+    4. Keep the query strictly between 40 and 80 words.
+    5. The query must read as a natural literature search inquiry describing a research project or idea.
+
+    PAPER ABSTRACT (FOR CONTEXT ONLY):
+    {abstract}
+
+    OUTPUT FORMAT:
+    Output ONLY the query text as plain text. No quotes, no intro, no preamble.
+
+  user_template_r25: |
+    Write an English research query (40 to 80 words) describing the core idea, problem, methodology, and findings of the research paper below.
+
+    RETENTION LEVEL: R25 (Low Terminology Retention / High Obfuscation)
+
+    CONSTRAINTS:
+    1. KEPT TERMS (MUST BE NATURALLY INTEGRATED):
+    {kept_terms_json}
+
+    2. FORBIDDEN TERMS (MUST NOT APPEAR):
+    You MUST NOT use ANY of the following FORBIDDEN TERMS, nor their word roots, morphological stems, acronyms, or numbers. Replace them with generic functional descriptions:
+    {removed_terms_json}
+
+    3. Do NOT copy verbatim sentences from the abstract or title.
+    4. Keep the query strictly between 40 and 80 words.
+    5. The query must read as a natural literature search inquiry describing a research project or idea.
+
+    PAPER ABSTRACT (FOR CONTEXT ONLY):
+    {abstract}
+
+    OUTPUT FORMAT:
+    Output ONLY the query text as plain text. No quotes, no intro, no preamble.
+
+  user_template_r0: |
+    Write an English research query (40 to 80 words) describing the core idea, problem, methodology, and findings of the research paper below.
+
+    RETENTION LEVEL: R0 (Zero Terminology Retention / Complete Concept Obfuscation)
+
+    CONSTRAINTS:
+    1. You MUST NOT use ANY of the following FORBIDDEN TERMS, nor their word roots, morphological stems, acronyms, or numbers:
+    FORBIDDEN TERMS:
+    {removed_terms_json}
+
+    2. Replace every forbidden term with high-level, generic functional descriptions.
+    3. Do NOT copy verbatim sentences from the abstract or title.
+    4. Keep the query strictly between 40 and 80 words.
+    5. The query must read as a natural literature search inquiry describing a research project or idea.
+
+    PAPER ABSTRACT (FOR CONTEXT ONLY):
+    {abstract}
+
+    OUTPUT FORMAT:
+    Output ONLY the query text as plain text. No quotes, no intro, no preamble.
+
+judge:
+  system: "You are an expert scientific evaluator conducting quality control on literature search queries."
+  user_template: |
+    Evaluate whether the following research query is faithful to the source paper's abstract, and whether it is fluent English.
+
+    SOURCE ABSTRACT:
+    {abstract}
+
+    GENERATED QUERY:
+    {query}
+
+    EVALUATION CRITERIA:
+    1. FAITHFUL: Does the query accurately reflect the scientific problem, methodology, and core findings described in the abstract, without inventing contradictory or hallucinated claims?
+    2. FLUENT: Is the query grammatically natural, well-formed, and readable English?
+
+    Output your evaluation in strict JSON format:
+    {{
+      "faithful": true,
+      "fluent": true,
+      "reasoning": "brief justification"
+    }}
+    Output ONLY the JSON object, nothing else.
+

@@ -84,7 +84,7 @@ class GroqProvider:
                     data = res.json()
                     time.sleep(0.5)
                     return data["choices"][0]["message"]["content"]
-                elif res.status_code == 429:
+                elif res.status_code in (429, 503):
                     self.current_key_idx = (self.current_key_idx + 1) % len(self.keys)
                     delay = min(5.0 * (attempt + 1), 60.0)
                     time.sleep(delay)

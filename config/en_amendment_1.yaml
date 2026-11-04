@@ -1,0 +1,29 @@
+# EXPLORATORY - agent-proxy labels, human verification pending
+# English Terminology Dose-Response Pilot: Amendment 1
+# Date: 2026-11-04
+# Reason: Title lexical leak operationalization for non-zero retention levels
+
+amendment_id: 1
+date: "2026-11-04"
+rule_affected: "deterministic_acceptance_checks.max_title_lexical_leak"
+
+context_and_motivation: |
+  During Step E2 (DEV Run), unadjusted title lexical leak (measuring raw overlap between query tokens and title tokens >= 5 characters) caused widespread rejections of valid R100 and R50 queries (e.g., 8 of first 12 papers rejected on R100).
+  Scientific cause: In ACL publications, paper titles almost invariably contain the core technical key terms of the paper (e.g., 'Gherkin Controlled Natural Language and Machine Translation'). Because retention level R100 explicitly requires retaining 100% of these key terms, any faithful R100 query will inherently contain these terms, mechanically inflating unadjusted title overlap to 60%-100%. Enforcing unadjusted title leak <= 0.30 on R100 is therefore mathematically contradictory to the definition of full terminology retention.
+
+amended_rule: |
+  Title lexical leak is operationalized relative to title tokens that are OUTSIDE the authorized kept key terms:
+    title_tokens = {token for token in title.lower() if len(token) >= 5}
+    kept_tokens = {token for term in kept_terms for token in term.lower().split() if len(token) >= 4}
+    title_tokens_outside_kept = title_tokens - kept_tokens
+
+  If title_tokens_outside_kept is non-empty:
+    leak = len(query_tokens & title_tokens_outside_kept) / len(title_tokens_outside_kept)
+    leak <= 0.30
+  Else:
+    leak = 0.00 (all title content tokens are authorized kept terms)
+
+  Impact by retention level:
+  - R0: kept_terms is empty, so title_tokens_outside_kept == title_tokens. The rule is 100% identical to the original unadjusted title leak <= 0.30.
+  - R25, R50, R100: Prevents query from borrowing idiosyncratic title phrasing or framing words outside authorized technical terms, while allowing authorized kept terms.
+

@@ -1,0 +1,74 @@
+{
+  "banner": "EXPLORATORY - agent-proxy labels, human verification pending",
+  "seed": 13,
+  "counts": {
+    "total_seen": 44283,
+    "eligible_papers": 35707,
+    "sources_total": 300,
+    "sources_dev": 30,
+    "sources_test": 270,
+    "distractors": 5000
+  },
+  "exclusions": {
+    "total_seen": 44283,
+    "exclude_abstract_too_short": 2639,
+    "eligible_papers": 35707,
+    "exclude_title_prefix_detected": 64,
+    "exclude_no_abstract": 3802,
+    "exclude_abstract_too_long": 39,
+    "exclude_non_english_lang_tag": 1051,
+    "exclude_demo": 694,
+    "exclude_not_english_text": 155,
+    "exclude_tutorial": 132
+  },
+  "year_stratification": {
+    "2018": {
+      "source_quota": 43,
+      "dev_quota": 4,
+      "test_quota": 39,
+      "eligible_in_corpus": 143
+    },
+    "2019": {
+      "source_quota": 43,
+      "dev_quota": 4,
+      "test_quota": 39,
+      "eligible_in_corpus": 119
+    },
+    "2020": {
+      "source_quota": 43,
+      "dev_quota": 4,
+      "test_quota": 39,
+      "eligible_in_corpus": 5755
+    },
+    "2021": {
+      "source_quota": 43,
+      "dev_quota": 4,
+      "test_quota": 39,
+      "eligible_in_corpus": 5279
+    },
+    "2022": {
+      "source_quota": 43,
+      "dev_quota": 5,
+      "test_quota": 38,
+      "eligible_in_corpus": 7345
+    },
+    "2023": {
+      "source_quota": 43,
+      "dev_quota": 5,
+      "test_quota": 38,
+      "eligible_in_corpus": 7114
+    },
+    "2024": {
+      "source_quota": 42,
+      "dev_quota": 4,
+      "test_quota": 38,
+      "eligible_in_corpus": 9952
+    }
+  },
+  "sha256": {
+    "sources_300": "ec8d094d603f5de19d81f6b9ad3c7ce01a06f3e6f2c4e69cc94e03bff490594b",
+    "sources_dev_30": "c54898166ec332cbb34a7023a9e3dd2afa489d7ab06bf8bdfeafd38c0b326672",
+    "sources_test_270": "a61a8aab82bea0ab4c983464b2aaddcc7d0b26549c419ebf3ce7b117cf8e1a34",
+    "distractors_5000": "655391749aca7c0e59b71fc2566f412a56ad8f8d48fc871bd4f4625997ff1475"
+  }
+}
