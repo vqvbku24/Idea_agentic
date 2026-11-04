@@ -251,3 +251,4 @@ Below are three distinct candidate formulations of our core contribution, each p
   - **Chain of Retrieval (2025)** demonstrates that iterative multi-aspect expansion outperforms fixed single-step retrievers on full-paper discovery.
   - **UniFAR (2026)** explores unified facet modeling across query-document and document-document paradigms.
   - Standard hybrid fusion studies (e.g., BM25 + Dense RRF benchmarks) already show headroom over single fixed retrievers, though typically without aspect-level oracle routing.
+

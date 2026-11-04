@@ -1,0 +1,39 @@
+claim,value,source_file,script,git_commit,input_files_sha256
+Total queries in queries.jsonl,90,results/real/queries.jsonl,scripts/run_retrieval_colab_full.py,9f09847,queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60
+Accepted queries in queries.jsonl,77,results/real/queries.jsonl,scripts/run_retrieval_colab_full.py,9f09847,queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60
+Rejected queries in queries.jsonl,13,results/real/queries.jsonl,scripts/run_retrieval_colab_full.py,9f09847,queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60
+Native view V1 Recall@10 unchanged status,0.79 (unchanged),results/real/followup/doc_translate_diff.csv,tests/test_doc_translate_anomalies.py,9f09847,retrieval_full_metrics.csv:9aebccfbbab91404c0dfdf46d5c65f80b2a76f2d5e2363e77f0a823e59005937
+Native view V0 Recall@10 unchanged status,1.00 (unchanged),results/real/followup/doc_translate_diff.csv,tests/test_doc_translate_anomalies.py,9f09847,retrieval_full_metrics.csv:9aebccfbbab91404c0dfdf46d5c65f80b2a76f2d5e2363e77f0a823e59005937
+Absent-control AUC anomaly fix verification,Corrected from constant 0.50,results/real/followup/doc_translate_diff.csv,tests/test_doc_translate_anomalies.py,9f09847,retrievers.py
+Judge audit sheet total items,20,results/real/followup/judge_audit_sheet.csv,scripts/build_judge_audit_sheet.py,9f09847,"queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60,papers_x2.jsonl"
+Judge audit sheet accepted items,10,results/real/followup/judge_audit_sheet.csv,scripts/build_judge_audit_sheet.py,9f09847,queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60
+Judge audit sheet rejected items,10,results/real/followup/judge_audit_sheet.csv,scripts/build_judge_audit_sheet.py,9f09847,queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60
+Judge audit sheet V2 rejections count,6,results/real/followup/judge_audit_sheet.csv,scripts/build_judge_audit_sheet.py,9f09847,queries.jsonl:1dbb4d0fd2278486ca99f24fae41ab1d451cb904ef243878b273b7548483ba60
+Human followup blind input sources count,10,data/human/h_followup_input.jsonl,scripts/build_human_followup_input.py,9f09847,"sources_final.json,papers_x2.jsonl"
+Human followup flagged title-like prefixes count,2,data/human/h_followup_input.jsonl,scripts/build_human_followup_input.py,9f09847,papers_x2.jsonl
+Human-written followup queries count,10,data/human/human_queries_followup.csv,data/human/human_queries_followup.csv,132bfa8,h_followup_input.jsonl:ea54b2fcfa62dfb312b91ea280387aa4392a82fa9cb8dfbcbe8bf2c37e6f8510
+Human-judge agreement on leaks,85.0,results/real/followup/judge_audit_metrics.json,scripts/judge_audit_compare.py,132bfa8,judge_audit_sheet.csv:bd49c0f4a4c27909fbabb8c3502e418002701af5c0f37b9771d4419d200d3117
+Human-judge agreement on fluent,95.0,results/real/followup/judge_audit_metrics.json,scripts/judge_audit_compare.py,132bfa8,judge_audit_sheet.csv:bd49c0f4a4c27909fbabb8c3502e418002701af5c0f37b9771d4419d200d3117
+Human-judge agreement on faithful,55.0,results/real/followup/judge_audit_metrics.json,scripts/judge_audit_compare.py,132bfa8,judge_audit_sheet.csv:bd49c0f4a4c27909fbabb8c3502e418002701af5c0f37b9771d4419d200d3117
+Human-judge agreement on overall verdict,55.0,results/real/followup/judge_audit_metrics.json,scripts/judge_audit_compare.py,132bfa8,judge_audit_sheet.csv:bd49c0f4a4c27909fbabb8c3502e418002701af5c0f37b9771d4419d200d3117
+Reproduction check match across all cells,100.0%,results/real/retrieval_full_metrics.csv,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+Manifest verification match,100% exact match,results/real/rank_export_manifest.json,scripts/compute_followup_headroom.py,current,rank_export_manifest.json:0a57219f93030707e8bd22169698eab3e44238285661493e1b495e910e5dc0a2
+V1 Native BM25 Recall@10,0.158,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+V1 Native Dense BGE-M3 Recall@10,0.789,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+V1 Native DocTranslate BM25 Recall@10,0.947,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+V1 Native Oracle Routing Recall@10,1.0,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+"V1 Native RRF(dense, doctrans) Recall@10",1.0,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+V1 misses share rank <= 50,1.0,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+V1 misses share rank > 100,0.0,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+V1 dense misses median rank,27.5,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+Decision rule ranking_failure verdict,TRUE,config/followup_decision_rules.yaml,scripts/compute_followup_headroom.py,current,decision_rules:40993f7aa5e8c7051c31b00ed4b085987bc5f384bb1b8111e802aade48f9daa0
+Decision rule far_miss verdict,FALSE,config/followup_decision_rules.yaml,scripts/compute_followup_headroom.py,current,decision_rules:40993f7aa5e8c7051c31b00ed4b085987bc5f384bb1b8111e802aade48f9daa0
+Decision rule routing_headroom over dense,0.211,config/followup_decision_rules.yaml,scripts/compute_followup_headroom.py,current,decision_rules:40993f7aa5e8c7051c31b00ed4b085987bc5f384bb1b8111e802aade48f9daa0
+H-human Native BM25 Recall@10,0.7,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+H-human Native Dense BGE-M3 Recall@10,0.8,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+H-human Native DocTranslate BM25 Recall@10,1.0,results/real/followup/headroom_tables.json,scripts/compute_followup_headroom.py,current,rank_export.csv:a1adf28d5a4848428d8404c55ba3688b272da658a89922a2a69c1d6cae3d99c0
+Probe V1 misses Oracle-Inserted Top-3 accuracy,1.0,results/real/followup/identifiability_results.json,scripts/run_identifiability_probe.py,current,identifiability_results.json
+Probe No-Query Control overall accuracy,0.08,results/real/followup/identifiability_results.json,scripts/run_identifiability_probe.py,current,identifiability_results.json
+Decision rule identifiable verdict,TRUE,config/followup_decision_rules.yaml,scripts/run_identifiability_probe.py,current,decision_rules:40993f7aa5e8c7051c31b00ed4b085987bc5f384bb1b8111e802aade48f9daa0
+Decision rule under_specified verdict,FALSE,config/followup_decision_rules.yaml,scripts/run_identifiability_probe.py,current,decision_rules:40993f7aa5e8c7051c31b00ed4b085987bc5f384bb1b8111e802aade48f9daa0
+Decision rule format_leak_control verdict,TRUE,config/followup_decision_rules.yaml,scripts/run_identifiability_probe.py,current,decision_rules:40993f7aa5e8c7051c31b00ed4b085987bc5f384bb1b8111e802aade48f9daa0
