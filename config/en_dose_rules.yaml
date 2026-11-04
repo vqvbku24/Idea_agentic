@@ -1,0 +1,125 @@
+# EXPLORATORY - agent-proxy labels, human verification pending
+# English Terminology Dose-Response Pilot: Frozen Study Design & Decision Rules
+# Tagged: en-dose-rules-frozen
+
+banner: "EXPLORATORY - agent-proxy labels, human verification pending"
+
+corpus:
+  name: "English ACL Anthology"
+  archive_path: "data/cache/acl-anthology-master.zip"
+  years: [2018, 2019, 2020, 2021, 2022, 2023, 2024]
+  seed: 13
+  sources:
+    total: 300
+    dev: 30
+    test: 270
+    stratification: "stratified by publication year (2018-2024)"
+  eligibility:
+    min_abstract_words: 80
+    max_abstract_words: 300
+    title_prefix_filter: true
+    exclude_tracks:
+      - "frontmatter"
+      - "tributes"
+      - "keynotes"
+      - "session_summaries"
+      - "tutorial_abstracts"
+      - "shared_task_overviews"
+  distractors:
+    count: 5000
+    content: "title + abstract"
+    constraint: "strictly disjoint from source papers"
+
+key_terms:
+  extractor_model: "qwen/qwen3.8-27b"
+  range_min: 6
+  range_max: 12
+  verbatim_in_abstract: true
+
+retention_levels:
+  R100:
+    name: "Full retention"
+    target_retention: 1.00
+    description: "All extracted key terms retained in the query"
+  R50:
+    name: "Moderate retention"
+    target_retention: 0.50
+    description: "50% of extracted key terms retained; remaining 50% removed and generalized"
+  R25:
+    name: "Low retention"
+    target_retention: 0.25
+    description: "25% of extracted key terms retained; remaining 75% removed and generalized"
+  R0:
+    name: "Zero retention (Full obfuscation)"
+    target_retention: 0.00
+    description: "Zero key terms retained; all key concepts replaced with generic descriptions"
+  subset_selection_seed: 13
+
+query:
+  language: "English"
+  word_count_min: 40
+  word_count_max: 80
+  task: "idea-level research description"
+  generalization_requirement: "removed terms must be replaced by generic, concept-level descriptions"
+
+deterministic_acceptance_checks:
+  retention_tolerance_terms: 1
+  zero_removed_terms_stemmed: true
+  max_title_lexical_leak: 0.30
+  no_digits_or_acronyms_from_removed: true
+
+judge:
+  model: "openai/gpt-oss-120b"
+  temperature: 0.0
+  criteria:
+    faithful: "faithful to abstract problem, method, and findings"
+    fluent: "fluent and grammatically natural English"
+  logging: "rejections logged with granular failure reasons and reported per level"
+
+retrievers:
+  core:
+    - "bm25"
+    - "dense_bge_m3"
+    - "hybrid_rrf"
+  optional_reranker:
+    model: "BAAI/bge-reranker-v2-m3"
+    top_k: 50
+    condition: "run only if loads in environment, else report NOT DONE"
+
+metrics:
+  cutoffs: [10, 50, 100]
+  mrr: true
+  confidence_intervals: "exact Clopper-Pearson 95% binomial intervals (reported alongside k of n)"
+  paper_bootstrap:
+    resamples: 1000
+    confidence: 0.95
+  dose_response_contrast: "Recall@10(R100) minus Recall@10(R0) with paired bootstrap interval"
+  slope: "linear slope of Recall@10 across R100 -> R50 -> R25 -> R0"
+
+decision_rules:
+  saturated:
+    description: "Saturated retrieval if the best retriever achieves Recall@10 >= 0.95 at both R0 and R25"
+    threshold_r0: 0.95
+    threshold_r25: 0.95
+  dose_response_present:
+    description: "Dose-response present if the best retriever drops >= 20 points between R100 and R0 with paired bootstrap interval excluding 0"
+    drop_threshold: 0.20
+    excludes_zero: true
+  bm25_floor:
+    description: "BM25 at R0 <= 0.05 is expected baseline floor and not informative of semantic retrieval failure"
+    floor_threshold: 0.05
+  probe_valid:
+    description: "Identifiability probe valid only if no-query control accuracy <= 10%"
+    threshold: 0.10
+
+contamination_control:
+  closed_book_query: "ask LLM for title given R0 query without corpus context"
+  exact_title_hit_rate: true
+  training_cutoff_reporting: "report share of sources published before model training cutoff as unknown"
+
+identifiability_control:
+  condition: "execute only if dose-response is present"
+  protocol:
+    - "AS_RETRIEVED"
+    - "ORACLE_INSERTED"
+    - "NO_QUERY_CONTROL"
