@@ -1,0 +1,71 @@
+{
+  "banner": "EXPLORATORY - agent-proxy labels, human verification pending",
+  "model": "openai/gpt-oss-120b",
+  "n_evaluated_r0": 193,
+  "exact_title_hits": 0,
+  "exact_title_hit_rate": 0.0,
+  "exact_title_hit_rate_ci95": [
+    0.0,
+    0.0189
+  ],
+  "unknown_count": 102,
+  "unknown_rate": 0.5285,
+  "unknown_rate_ci95": [
+    0.4555,
+    0.6006
+  ],
+  "pre_2024_sources_count": 170,
+  "pre_2024_unknown_count": 88,
+  "pre_2024_unknown_share": 0.5176,
+  "by_year": {
+    "2018": {
+      "n": 27,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 13,
+      "unknown_rate": 0.4815
+    },
+    "2019": {
+      "n": 28,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 17,
+      "unknown_rate": 0.6071
+    },
+    "2020": {
+      "n": 28,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 15,
+      "unknown_rate": 0.5357
+    },
+    "2021": {
+      "n": 31,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 16,
+      "unknown_rate": 0.5161
+    },
+    "2022": {
+      "n": 31,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 18,
+      "unknown_rate": 0.5806
+    },
+    "2023": {
+      "n": 25,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 9,
+      "unknown_rate": 0.36
+    },
+    "2024": {
+      "n": 23,
+      "exact_hits": 0,
+      "hit_rate": 0.0,
+      "unknowns": 14,
+      "unknown_rate": 0.6087
+    }
+  }
+}

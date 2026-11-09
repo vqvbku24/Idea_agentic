@@ -1,0 +1,24 @@
+{
+  "banner": "EXPLORATORY - agent-proxy labels, human verification pending",
+  "study": "English Terminology Dose-Response Pilot",
+  "created_at_utc": "2026-11-09T12:14:21Z",
+  "git_commit": "033124654e231a5a9bd8cc1c075a6fee10fab1ed",
+  "git_dirty": true,
+  "corpus_size": 5300,
+  "n_queries": 576,
+  "reranker_status": "NOT DONE (bge-reranker-v2-m3 could not be loaded: No module named 'FlagEmbedding')",
+  "files": {
+    "rank_export_en_csv": {
+      "sha256": "ae885c4be805e427f7a0a448250f4f23d38658a660806d7518a042b23872686f",
+      "size_bytes": 11307754
+    },
+    "rank_export_en_parquet": {
+      "sha256": "e28c200abf55222245d68b937fc44afeddb5bed3cedb981d4c8ac330dd1b8ef9",
+      "size_bytes": 3480901
+    },
+    "retrieval_en_metrics_csv": {
+      "sha256": "7d71b31aa87e4511f0486466223be56eea03dcb8245994be211be74d7f1a9cf0",
+      "size_bytes": 1480
+    }
+  }
+}
