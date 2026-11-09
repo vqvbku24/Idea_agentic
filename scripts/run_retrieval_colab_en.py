@@ -89,18 +89,18 @@ def run_en_retrieval(drive_cache_dir: Path | None = None) -> None:
     print(f"BM25 ready in {time.time()-t0:.2f}s", flush=True)
 
     # B. Dense BGE-M3
-    cache_path = None
-    if drive_cache_dir:
-        drive_cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_path = drive_cache_dir / f"bge_m3_en_corpus_{corpus_size}.pt"
-    else:
-        local_cache = ROOT / "cache/embeddings"
-        local_cache.mkdir(parents=True, exist_ok=True)
-        cache_path = local_cache / f"bge_m3_en_corpus_{corpus_size}.pt"
+    dense_cache = drive_cache_dir if drive_cache_dir else (ROOT / "data/cache/embeddings")
+    dense_cache.mkdir(parents=True, exist_ok=True)
 
     t1 = time.time()
-    print(f"\n--- Initializing Dense BGE-M3 (cache: {cache_path}) ---", flush=True)
-    dense = DenseBgeM3(corpus_dict, cache_path=cache_path)
+    print(f"\n--- Initializing Dense BGE-M3 (cache dir: {dense_cache}) ---", flush=True)
+    dense_index = DenseBgeM3(
+        views={"native": corpus_dict},
+        cache_dir=dense_cache,
+        max_length=1024,
+        batch_size=16,
+    )
+    dense = dense_index.for_view("native")
     print(f"Dense BGE-M3 ready in {time.time()-t1:.2f}s", flush=True)
 
     # C. Hybrid RRF
@@ -108,13 +108,16 @@ def run_en_retrieval(drive_cache_dir: Path | None = None) -> None:
 
     # 4. Optional Cross-Encoder Reranker
     reranker = None
+    reranker_status = "NOT DONE (not attempted)"
     try:
         from FlagEmbedding import FlagReranker
         print("\n--- Attempting to load BAAI/bge-reranker-v2-m3 ---", flush=True)
         reranker = FlagReranker("BAAI/bge-reranker-v2-m3", use_fp16=True)
         print("bge-reranker-v2-m3 loaded successfully!", flush=True)
+        reranker_status = "LOADED"
     except Exception as e:
-        print(f"bge-reranker-v2-m3 could not be loaded ({e}); marking reranker as NOT DONE per rules.", flush=True)
+        reranker_status = f"NOT DONE (bge-reranker-v2-m3 could not be loaded: {e})"
+        print(f"{reranker_status}; marking reranker as NOT DONE per rules.", flush=True)
         reranker = None
 
     retrievers = {
@@ -122,6 +125,31 @@ def run_en_retrieval(drive_cache_dir: Path | None = None) -> None:
         "dense_bge_m3": dense,
         "hybrid_rrf": hybrid,
     }
+
+    if reranker is not None:
+        class CrossEncoderReranker:
+            def __init__(self, base_ranker: Any, reranker_model: Any, corpus: dict[str, str], top_k: int = 50):
+                self.base_ranker = base_ranker
+                self.reranker = reranker_model
+                self.corpus = corpus
+                self.top_k = top_k
+                self.doc_ids = base_ranker.doc_ids
+
+            def rank(self, query: str, candidates: set[str] | None = None) -> list[tuple[str, float]]:
+                base_ranked = self.base_ranker.rank(query, candidates)
+                to_rerank = base_ranked[:self.top_k]
+                remainder = base_ranked[self.top_k:]
+                if not to_rerank:
+                    return base_ranked
+                pairs = [[query, self.corpus.get(did, "")] for did, _ in to_rerank]
+                scores = self.reranker.compute_score(pairs, normalize=True)
+                if isinstance(scores, (float, int)):
+                    scores = [scores]
+                reranked = [(to_rerank[i][0], float(scores[i])) for i in range(len(to_rerank))]
+                reranked.sort(key=lambda item: (-item[1], item[0]))
+                return reranked + remainder
+
+        retrievers["reranker_bge_v2"] = CrossEncoderReranker(hybrid, reranker, corpus_dict, top_k=50)
 
     # 5. Execute Retrieval & Export Rankings
     print("\n--- Running retrieval across all queries and models ---", flush=True)
@@ -140,12 +168,12 @@ def run_en_retrieval(drive_cache_dir: Path | None = None) -> None:
 
         for m_name, model in retrievers.items():
             ranked = model.rank(q_text)
-            top200 = ranked[:200]
-            top200_ids = [did for did, _ in top200]
-            top200_scores = [round(float(s), 4) for _, s in top200]
-
-            source_rank = next((idx for idx, did in enumerate(top200_ids, 1) if did == sid), 9999)
+            doc_ids = [did for did, _ in ranked]
+            source_rank = doc_ids.index(sid) + 1 if sid in doc_ids else 9999
             metrics_by_model_level[m_name][lvl].append(source_rank)
+
+            top200_ids = doc_ids[:200]
+            top200_scores = [round(float(s), 4) for _, s in ranked[:200]]
 
             export_rows.append({
                 "banner": BANNER,
@@ -226,6 +254,7 @@ def run_en_retrieval(drive_cache_dir: Path | None = None) -> None:
         "git_dirty": git_info["dirty"],
         "corpus_size": corpus_size,
         "n_queries": len(queries),
+        "reranker_status": reranker_status,
         "files": {
             "rank_export_en_csv": {
                 "sha256": get_sha256(csv_path),
