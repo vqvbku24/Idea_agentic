@@ -41,9 +41,14 @@ def validate_and_sign(reviewer: str) -> None:
     if not reviewer or len(reviewer) < 2:
         raise ValueError("Valid reviewer initials or name must be provided (e.g., --reviewer VK)")
 
-    with open(SHEET_PATH, encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        rows = list(reader)
+    try:
+        with open(SHEET_PATH, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
+    except UnicodeDecodeError:
+        with open(SHEET_PATH, encoding="utf-8", errors="replace") as f:
+            reader = csv.DictReader(f)
+            rows = list(reader)
 
     if not rows:
         raise ValueError(f"Review sheet {SHEET_PATH} is empty!")

@@ -28,3 +28,4 @@ This inventory confirms the presence, integrity, and operational readiness of al
 - [x] **Local BM25**: Operational locally via `rank-bm25`.
 - [x] **Colab Infrastructure**: Validated through successful completion and reproduction of the French follow-up study.
 - [x] **Governance Rules**: Global rules G1–G9 active and strictly enforced.
+

@@ -1,0 +1,33 @@
+{
+  "banner": "EXPLORATORY - agent-proxy labels, human verification pending",
+  "study": "English Terminology Dose-Response Pilot",
+  "stage": "E3_colab_kit",
+  "created_at_utc": "2026-11-09T11:28:01Z",
+  "files": {
+    "sources_300": {
+      "path": "data\\en\\sources_300.jsonl",
+      "sha256": "ec8d094d603f5de19d81f6b9ad3c7ce01a06f3e6f2c4e69cc94e03bff490594b",
+      "size_bytes": 389983
+    },
+    "distractors_5000": {
+      "path": "data\\en\\distractors_5000.jsonl",
+      "sha256": "655391749aca7c0e59b71fc2566f412a56ad8f8d48fc871bd4f4625997ff1475",
+      "size_bytes": 6822953
+    },
+    "queries_test_en": {
+      "path": "results\\real\\en\\queries_test_en.jsonl",
+      "sha256": "8395975ffc0b101d14131aba71ea117b40a2ceb9638c0834bf455d45e682f44e",
+      "size_bytes": 1309578
+    },
+    "en_dose_rules": {
+      "path": "config\\en_dose_rules.yaml",
+      "sha256": "903f7ceee8e24a658963f8a394294276215c2310f0e362d7b76d1d5e4b7ed86f",
+      "size_bytes": 4017
+    },
+    "en_prompts": {
+      "path": "config\\en_prompts.yaml",
+      "sha256": "d7d1a160ff268532633d81b9335326aba2c7471cadcfd3983456494ab80aa893",
+      "size_bytes": 5338
+    }
+  }
+}

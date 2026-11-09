@@ -1,0 +1,5 @@
+banner,retriever,level,n_queries,recall_10,recall_10_ci95_low,recall_10_ci95_high,recall_50,recall_100,mrr
+"EXPLORATORY - agent-proxy labels, human verification pending",bm25,R100,196,1.0,0.9814,1.0,1.0,1.0,1.0
+"EXPLORATORY - agent-proxy labels, human verification pending",bm25,R50,85,1.0,0.9575,1.0,1.0,1.0,1.0
+"EXPLORATORY - agent-proxy labels, human verification pending",bm25,R25,102,0.9804,0.931,0.9976,0.9902,1.0,0.937
+"EXPLORATORY - agent-proxy labels, human verification pending",bm25,R0,193,0.3523,0.2851,0.4242,0.5078,0.6062,0.2635
